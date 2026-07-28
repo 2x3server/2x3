@@ -1,0 +1,12 @@
+project:
+  name: "2x3"
+  version: "0.1"
+
+paths:
+  assets: "assets"
+  data: "data"
+  logs: "logs"
+
+logging:
+  level: "INFO"
+  file: "logs/2x3.log"
