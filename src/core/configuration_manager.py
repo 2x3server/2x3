@@ -20,7 +20,7 @@ class ConfigurationManager:
         self.frame_step = 30
 
         # Image quality
-        self.laplacian_threshold = 100.0
+        self.laplacian_threshold = 5.0
         self.minimum_width = 640
         self.minimum_height = 480
 
