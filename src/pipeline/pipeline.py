@@ -26,7 +26,7 @@ class Pipeline:
         self.configuration = configuration
 
     def _run_colmap(self, image_folder: Path) -> None:
-        """Execute the first COLMAP reconstruction steps."""
+        """Execute the COLMAP reconstruction pipeline."""
 
         workspace = self.project.folder / "colmap"
 
@@ -34,8 +34,10 @@ class Pipeline:
 
         database = workspace / "database.db"
         sparse = workspace / "sparse"
+        dense = workspace / "dense"
 
         sparse.mkdir(parents=True, exist_ok=True)
+        dense.mkdir(parents=True, exist_ok=True)
 
         runner = ColmapRunner()
 
@@ -59,6 +61,20 @@ class Pipeline:
         )
 
         print("\nSparse reconstruction completed.")
+
+        runner.image_undistorter(
+            image_path=image_folder,
+            input_path=sparse / "0",
+            output_path=dense,
+        )
+
+        print("\nImage undistortion completed.")
+
+        runner.patch_match_stereo(
+            workspace_path=dense,
+        )
+
+        print("\nPatch Match Stereo completed.")
 
     def run(self) -> None:
         """Execute the processing pipeline."""
