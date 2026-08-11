@@ -1,85 +1,43 @@
 # PROJECT STATE
 
-**Progetto:** 2x3
+La documentazione viene mantenuta parallelamente allo sviluppo del codice.
 
-**Versione:** Build 0.1
-
-------------------------------------------------------------------------
-
-# Stato generale
-
-La Build 0.1 costituisce la base del progetto 2x3.
-
-Lo scopo di questa Build è predisporre tutta la struttura necessaria per
-consentire lo sviluppo delle Build successive in modo ordinato,
-documentato e modulare.
+Ogni modifica importante viene riportata nei documenti ufficiali del progetto.
 
 ------------------------------------------------------------------------
 
-# Componenti completati
+# Build corrente
 
-Attualmente risultano predisposti:
+Build 0.2
 
-- struttura del repository;
-- organizzazione delle cartelle principali;
-- documentazione iniziale;
-- ambiente di sviluppo;
-- architettura del progetto;
-- roadmap di sviluppo.
+**Stato:** STABILE
 
 ------------------------------------------------------------------------
 
-# Componenti in preparazione
+# Funzionalità completate
 
-Le funzionalità operative saranno sviluppate progressivamente nelle Build
-successive.
-
-In particolare:
-
-- pipeline di importazione;
-- pipeline di elaborazione;
-- ricostruzione 3D;
-- interfaccia grafica;
-- esportazione dei modelli.
-
-------------------------------------------------------------------------
-
-# Stato del codice
-
-Il codice presente nella Build 0.1 rappresenta la struttura iniziale del
-progetto.
-
-Non costituisce ancora una versione funzionale dell'applicazione ma la
-base sulla quale verranno sviluppati tutti i moduli.
+- Repository Git organizzato.
+- Ambiente di sviluppo configurato.
+- Pipeline automatica COLMAP.
+- Pipeline automatica OpenMVS.
+- Generazione della nuvola di punti densa.
+- Ricostruzione della mesh.
+- Raffinamento della mesh.
+- Generazione della mesh texturizzata.
+- Gestione dei progetti.
+- Struttura modulare del codice.
 
 ------------------------------------------------------------------------
 
-# Stato della documentazione
+# Stato del repository
 
-La documentazione viene mantenuta parallelamente allo sviluppo del
-codice.
-
-Ogni modifica importante dovrà essere riportata nei documenti ufficiali
-del progetto.
+- Branch stabile disponibile.
+- Tag di versione disponibile.
+- Repository sincronizzato con GitHub.
 
 ------------------------------------------------------------------------
 
-# Obiettivo della Build
+# Prossimo obiettivo
 
-Al termine della Build 0.1 il progetto dovrà disporre di:
-
-- repository organizzato;
-- documentazione completa;
-- ambiente configurato;
-- struttura modulare pronta allo sviluppo.
-
-------------------------------------------------------------------------
-
-# Stato complessivo
-
-Build 0.1
-
-**Stato:** IN SVILUPPO
-
-La Build verrà considerata completata soltanto dopo la verifica della
-coerenza tra documentazione, codice, struttura del repository e test.
+Realizzazione dell'interfaccia grafica e integrazione del monitoraggio
+dell'avanzamento delle elaborazioni.
