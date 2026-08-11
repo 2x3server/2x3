@@ -11,6 +11,7 @@ from ..models.project import Project
 from .colmap_runner import ColmapRunner
 from .image_quality import ImageQualityChecker
 from .import_images import ImageImporter
+from .openmvs_runner import OpenMVSRunner
 from .video_import import VideoImporter
 
 
@@ -25,7 +26,7 @@ class Pipeline:
         self.project = project
         self.configuration = configuration
 
-    def _run_colmap(self, image_folder: Path) -> None:
+    def _run_colmap(self, image_folder: Path) -> Path:
         """Execute the COLMAP reconstruction pipeline."""
 
         workspace = self.project.folder / "colmap"
@@ -70,11 +71,44 @@ class Pipeline:
 
         print("\nImage undistortion completed.")
 
-        runner.patch_match_stereo(
-            workspace_path=dense,
-        )
+        #         runner.patch_match_stereo(
+        #             workspace_path=dense,
+        #         )
 
         print("\nPatch Match Stereo completed.")
+
+        return dense
+
+    def _run_openmvs(
+        self,
+        dense_workspace: Path,
+        image_folder: Path,
+    ) -> None:
+        """Execute the OpenMVS reconstruction pipeline."""
+
+        workspace = self.project.folder / "openmvs"
+        workspace.mkdir(parents=True, exist_ok=True)
+
+        runner = OpenMVSRunner(
+            self.configuration.openmvs_executable_folder,
+        )
+
+        scene = workspace / "scene.mvs"
+
+        runner.interface_colmap(
+            input_file=dense_workspace,
+            output_file=scene,
+        )
+
+        runner.densify_point_cloud(scene)
+
+        scene = workspace / "scene_dense.mvs"
+
+        runner.reconstruct_mesh(scene)
+        runner.refine_mesh(scene)
+        runner.texture_mesh(scene)
+
+        print("\nOpenMVS reconstruction completed.")
 
     def run(self) -> None:
         """Execute the processing pipeline."""
@@ -124,6 +158,11 @@ class Pipeline:
             f"({len(report.valid_images)} valid images)."
         )
 
-        self._run_colmap(image_folder)
+        dense_workspace = self._run_colmap(image_folder)
+
+        self._run_openmvs(
+            dense_workspace=dense_workspace,
+            image_folder=image_folder,
+        )
 
         print("\nPipeline completed successfully.")

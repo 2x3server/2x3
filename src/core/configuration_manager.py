@@ -16,6 +16,11 @@ class ConfigurationManager:
         self.projects_root = Path("data/projects")
         self.default_project_name = "demo"
 
+        # OpenMVS
+        self.openmvs_executable_folder = Path(
+            "/workspaces/openMVS/build-vcpkg/bin"
+        )
+
         # Video
         self.frame_step = 30
 

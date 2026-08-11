@@ -115,14 +115,18 @@ class OpenMVSRunner:
         scene_file: Path,
     ) -> None:
         """
-        Ricostruisce la mesh.
+        Ricostruisce la mesh dalla nuvola di punti densa.
         """
+
+        dense_cloud = scene_file.with_suffix(".ply")
 
         self.run(
             "ReconstructMesh",
             [
                 "-i",
                 str(scene_file),
+                "-p",
+                str(dense_cloud),
             ],
         )
 
@@ -134,26 +138,43 @@ class OpenMVSRunner:
         Raffina la mesh.
         """
 
+        mesh = scene_file.with_name(
+            scene_file.stem + "_mesh.ply"
+        )
+
+        refined = scene_file.with_name(
+            scene_file.stem + "_mesh_refine.mvs"
+        )
+
         self.run(
             "RefineMesh",
             [
                 "-i",
                 str(scene_file),
+                "-m",
+                str(mesh),
+                "-o",
+                str(refined),
             ],
         )
-
     def texture_mesh(
         self,
         scene_file: Path,
     ) -> None:
         """
-        Applica le texture alla mesh.
+        Applica le texture alla mesh raffinata.
         """
+
+        mesh = scene_file.with_name(
+            scene_file.stem + "_mesh_refine.ply"
+        )
 
         self.run(
             "TextureMesh",
             [
                 "-i",
                 str(scene_file),
+                "-m",
+                str(mesh),
             ],
         )
