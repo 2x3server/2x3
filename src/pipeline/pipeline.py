@@ -108,6 +108,16 @@ class Pipeline:
         runner.refine_mesh(scene)
         runner.texture_mesh(scene)
 
+        from .stl_exporter import STLExporter
+
+        mesh_file = workspace / "scene_dense_mesh_refine.ply"
+        stl_file = workspace / "scene_dense_mesh_refine.stl"
+
+        STLExporter().export(
+            ply_file=mesh_file,
+            stl_file=stl_file,
+        )
+
         print("\nOpenMVS reconstruction completed.")
 
     def run(self) -> None:
