@@ -31,3 +31,7 @@ logs/*.log
 
 # Local data
 data/tmp/
+*.log
+depth*.dmap
+data/projects/demo/openmvs/
+data/projects/demo/colmap/database.db

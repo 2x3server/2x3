@@ -72,6 +72,8 @@ class ColmapRunner:
                 "feature_extractor",
                 "--ImageReader.single_camera",
                 "1",
+                "--SiftExtraction.use_gpu",
+                "0",
                 "--database_path",
                 str(database_path),
                 "--image_path",
@@ -87,6 +89,8 @@ class ColmapRunner:
         self.run(
             [
                 "exhaustive_matcher",
+                "--SiftMatching.use_gpu",
+                "0",
                 "--database_path",
                 str(database_path),
             ]
@@ -110,5 +114,49 @@ class ColmapRunner:
                 str(image_path),
                 "--output_path",
                 str(output_path),
+            ]
+        )
+
+    def image_undistorter(
+        self,
+        image_path: Path,
+        input_path: Path,
+        output_path: Path,
+    ) -> None:
+        """
+        Create the undistorted images required for dense reconstruction.
+        """
+
+        output_path.mkdir(parents=True, exist_ok=True)
+
+        self.run(
+            [
+                "image_undistorter",
+                "--image_path",
+                str(image_path),
+                "--input_path",
+                str(input_path),
+                "--output_path",
+                str(output_path),
+                "--output_type",
+                "COLMAP",
+            ]
+        )
+
+    def patch_match_stereo(
+        self,
+        workspace_path: Path,
+    ) -> None:
+        """
+        Esegue la ricostruzione densa mediante Patch Match Stereo.
+        """
+
+        self.run(
+            [
+                "patch_match_stereo",
+                "--workspace_path",
+                str(workspace_path),
+                "--workspace_format",
+                "COLMAP",
             ]
         )
