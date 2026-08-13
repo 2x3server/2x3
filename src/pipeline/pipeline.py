@@ -146,6 +146,9 @@ class Pipeline:
             stage="OpenMVS ReconstructMesh",
             files=[workspace / "scene_dense_mesh.ply"],
         )
+
+        scene = workspace / "scene_dense_mesh.mvs"
+
         runner.refine_mesh(scene)
         artifacts.require_files(
             stage="OpenMVS RefineMesh",
@@ -154,6 +157,9 @@ class Pipeline:
                 workspace / "scene_dense_mesh_refine.ply",
             ],
         )
+
+        scene = workspace / "scene_dense_mesh_refine.mvs"
+
         runner.texture_mesh(scene)
         artifacts.require_files(
             stage="OpenMVS TextureMesh",

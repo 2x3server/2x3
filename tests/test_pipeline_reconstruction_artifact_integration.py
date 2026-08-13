@@ -194,3 +194,102 @@ def test_pipeline_continues_when_all_openmvs_artifacts_exist(
         / "openmvs"
         / "scene_dense_mesh_refine.stl"
     ).exists()
+
+
+def test_scene_path_updated_after_reconstruct_mesh(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """RefineMesh must receive scene_dense_mesh.mvs, TextureMesh must
+    receive scene_dense_mesh_refine.mvs."""
+
+    received: dict[str, Path] = {}
+
+    class FakeOpenMVSRunner:
+        def __init__(self, executable_folder: Path) -> None:
+            self.executable_folder = executable_folder
+
+        def interface_colmap(
+            self,
+            input_file: Path,
+            output_file: Path,
+        ) -> None:
+            output_file.write_text("scene", encoding="utf-8")
+
+        def densify_point_cloud(self, scene_file: Path) -> None:
+            workspace = scene_file.parent
+            (workspace / "scene_dense.mvs").write_text(
+                "dense",
+                encoding="utf-8",
+            )
+            (workspace / "scene_dense.ply").write_text(
+                "dense-cloud",
+                encoding="utf-8",
+            )
+
+        def reconstruct_mesh(self, scene_file: Path) -> None:
+            workspace = scene_file.parent
+            (workspace / "scene_dense_mesh.ply").write_text(
+                "mesh",
+                encoding="utf-8",
+            )
+            (workspace / "scene_dense_mesh.mvs").write_text(
+                "mesh-mvs",
+                encoding="utf-8",
+            )
+
+        def refine_mesh(self, scene_file: Path) -> None:
+            received["refine_mesh"] = scene_file
+            workspace = scene_file.parent
+            (workspace / "scene_dense_mesh_refine.mvs").write_text(
+                "refine-mvs",
+                encoding="utf-8",
+            )
+            (workspace / "scene_dense_mesh_refine.ply").write_text(
+                "refine-ply",
+                encoding="utf-8",
+            )
+
+        def texture_mesh(self, scene_file: Path) -> None:
+            received["texture_mesh"] = scene_file
+            workspace = scene_file.parent
+            (
+                workspace / "scene_dense_mesh_refine_texture.mvs"
+            ).write_text("texture-mvs", encoding="utf-8")
+            (
+                workspace / "scene_dense_mesh_refine_texture.ply"
+            ).write_text("texture-ply", encoding="utf-8")
+
+    class FakeSTLExporter:
+        def export(self, ply_file: Path, stl_file: Path) -> Path:
+            stl_file.parent.mkdir(parents=True, exist_ok=True)
+            stl_file.write_bytes(b"stl")
+            return stl_file
+
+    monkeypatch.setattr(
+        pipeline_module,
+        "OpenMVSRunner",
+        FakeOpenMVSRunner,
+    )
+    monkeypatch.setattr(
+        stl_exporter_module,
+        "STLExporter",
+        FakeSTLExporter,
+    )
+
+    project = DummyProject(tmp_path / "project")
+    project.folder.mkdir(parents=True, exist_ok=True)
+
+    pipeline = Pipeline(
+        project=project,
+        configuration=DummyConfiguration(tmp_path),
+    )
+
+    pipeline._run_openmvs(
+        dense_workspace=tmp_path / "colmap" / "dense",
+        image_folder=tmp_path / "images",
+    )
+
+    openmvs = project.folder / "openmvs"
+    assert received["refine_mesh"] == openmvs / "scene_dense_mesh.mvs"
+    assert received["texture_mesh"] == openmvs / "scene_dense_mesh_refine.mvs"
