@@ -8,6 +8,7 @@ from pathlib import Path
 
 from ..core.configuration_manager import ConfigurationManager
 from ..models.project import Project
+from .checks.reconstruction_artifacts import ReconstructionArtifactCheck
 from .colmap_runner import ColmapRunner
 from .image_quality import ImageQualityChecker
 from .import_images import ImageImporter
@@ -30,6 +31,7 @@ class Pipeline:
         """Execute the COLMAP reconstruction pipeline."""
 
         workspace = self.project.folder / "colmap"
+        artifacts = ReconstructionArtifactCheck()
 
         workspace.mkdir(parents=True, exist_ok=True)
 
@@ -61,12 +63,35 @@ class Pipeline:
             output_path=sparse,
         )
 
+        sparse_model = sparse / "0"
+        artifacts.require_files(
+            stage="COLMAP mapper",
+            files=[
+                sparse_model / "cameras.bin",
+                sparse_model / "images.bin",
+                sparse_model / "points3D.bin",
+            ],
+        )
+
         print("\nSparse reconstruction completed.")
 
         runner.image_undistorter(
             image_path=image_folder,
             input_path=sparse / "0",
             output_path=dense,
+        )
+
+        artifacts.require_files(
+            stage="COLMAP image_undistorter",
+            files=[
+                dense / "sparse" / "cameras.bin",
+                dense / "sparse" / "images.bin",
+                dense / "sparse" / "points3D.bin",
+            ],
+        )
+        artifacts.require_non_empty_directory(
+            stage="COLMAP image_undistorter",
+            directory=dense / "images",
         )
 
         print("\nImage undistortion completed.")
@@ -88,6 +113,7 @@ class Pipeline:
 
         workspace = self.project.folder / "openmvs"
         workspace.mkdir(parents=True, exist_ok=True)
+        artifacts = ReconstructionArtifactCheck()
 
         runner = OpenMVSRunner(
             self.configuration.openmvs_executable_folder,
@@ -99,14 +125,43 @@ class Pipeline:
             input_file=dense_workspace,
             output_file=scene,
         )
+        artifacts.require_files(
+            stage="OpenMVS InterfaceCOLMAP",
+            files=[scene],
+        )
 
         runner.densify_point_cloud(scene)
 
         scene = workspace / "scene_dense.mvs"
+        artifacts.require_files(
+            stage="OpenMVS DensifyPointCloud",
+            files=[
+                scene,
+                workspace / "scene_dense.ply",
+            ],
+        )
 
         runner.reconstruct_mesh(scene)
+        artifacts.require_files(
+            stage="OpenMVS ReconstructMesh",
+            files=[workspace / "scene_dense_mesh.ply"],
+        )
         runner.refine_mesh(scene)
+        artifacts.require_files(
+            stage="OpenMVS RefineMesh",
+            files=[
+                workspace / "scene_dense_mesh_refine.mvs",
+                workspace / "scene_dense_mesh_refine.ply",
+            ],
+        )
         runner.texture_mesh(scene)
+        artifacts.require_files(
+            stage="OpenMVS TextureMesh",
+            files=[
+                workspace / "scene_dense_mesh_refine_texture.mvs",
+                workspace / "scene_dense_mesh_refine_texture.ply",
+            ],
+        )
 
         from .stl_exporter import STLExporter
 
@@ -116,6 +171,10 @@ class Pipeline:
         STLExporter().export(
             ply_file=mesh_file,
             stl_file=stl_file,
+        )
+        artifacts.require_files(
+            stage="STL export",
+            files=[stl_file],
         )
 
         print("\nOpenMVS reconstruction completed.")
