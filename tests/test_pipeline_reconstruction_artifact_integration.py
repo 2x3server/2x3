@@ -293,3 +293,217 @@ def test_scene_path_updated_after_reconstruct_mesh(
     openmvs = project.folder / "openmvs"
     assert received["refine_mesh"] == openmvs / "scene_dense_mesh.mvs"
     assert received["texture_mesh"] == openmvs / "scene_dense_mesh_refine.mvs"
+
+
+# ---------------------------------------------------------------------------
+# COLMAP workspace isolation tests
+# ---------------------------------------------------------------------------
+
+
+def _make_fake_colmap_runner(calls: list[str]) -> type:
+    """Return a FakeColmapRunner that records calls and creates minimal
+    artifacts so artifact checks pass."""
+
+    class FakeColmapRunner:
+        def __init__(self) -> None:
+            pass
+
+        def feature_extractor(
+            self,
+            image_path: Path,
+            database_path: Path,
+        ) -> None:
+            calls.append("feature_extractor")
+            database_path.write_bytes(b"db")
+
+        def exhaustive_matcher(self, database_path: Path) -> None:
+            calls.append("exhaustive_matcher")
+
+        def mapper(
+            self,
+            image_path: Path,
+            database_path: Path,
+            output_path: Path,
+        ) -> None:
+            calls.append("mapper")
+            sparse_model = output_path / "0"
+            sparse_model.mkdir(parents=True, exist_ok=True)
+            for name in ("cameras.bin", "images.bin", "points3D.bin"):
+                (sparse_model / name).write_bytes(b"bin")
+
+        def image_undistorter(
+            self,
+            image_path: Path,
+            input_path: Path,
+            output_path: Path,
+        ) -> None:
+            calls.append("image_undistorter")
+            dense_sparse = output_path / "sparse"
+            dense_sparse.mkdir(parents=True, exist_ok=True)
+            for name in ("cameras.bin", "images.bin", "points3D.bin"):
+                (dense_sparse / name).write_bytes(b"bin")
+            dense_images = output_path / "images"
+            dense_images.mkdir(parents=True, exist_ok=True)
+            (dense_images / "img.jpg").write_bytes(b"img")
+
+    return FakeColmapRunner
+
+
+def test_colmap_workspace_is_removed_before_new_run(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """An existing colmap workspace (with stale database.db) must be
+    deleted before a new COLMAP run starts."""
+
+    calls: list[str] = []
+
+    monkeypatch.setattr(
+        pipeline_module,
+        "ColmapRunner",
+        _make_fake_colmap_runner(calls),
+    )
+
+    project = DummyProject(tmp_path / "project")
+    project.folder.mkdir(parents=True, exist_ok=True)
+
+    # Plant a stale workspace with an existing database.
+    stale_workspace = project.folder / "colmap"
+    stale_workspace.mkdir(parents=True)
+    stale_db = stale_workspace / "database.db"
+    stale_db.write_bytes(b"stale")
+    stale_extra = stale_workspace / "sparse" / "old_model"
+    stale_extra.mkdir(parents=True)
+    (stale_extra / "cameras.bin").write_bytes(b"old")
+
+    pipeline = Pipeline(
+        project=project,
+        configuration=DummyConfiguration(tmp_path),
+    )
+
+    # _run_colmap should succeed and produce a fresh workspace.
+    pipeline._run_colmap(image_folder=tmp_path / "images")
+
+    # The database written by FakeColmapRunner must be freshly created —
+    # confirming the stale one was wiped.
+    fresh_db = project.folder / "colmap" / "database.db"
+    assert fresh_db.exists()
+    assert fresh_db.read_bytes() == b"db"
+
+    # The old sparse sub-model must no longer exist.
+    assert not stale_extra.exists()
+
+
+def test_colmap_workspace_recreated_cleanly(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """After cleanup the COLMAP workspace must be recreated as an empty
+    directory before any COLMAP tool is invoked."""
+
+    created_before_first_call: list[bool] = []
+    calls: list[str] = []
+
+    class FakeColmapRunnerProbe:
+        def __init__(self) -> None:
+            pass
+
+        def feature_extractor(
+            self,
+            image_path: Path,
+            database_path: Path,
+        ) -> None:
+            calls.append("feature_extractor")
+            # Workspace must already exist at this point.
+            created_before_first_call.append(
+                database_path.parent.exists()
+            )
+            database_path.write_bytes(b"db")
+
+        def exhaustive_matcher(self, database_path: Path) -> None:
+            calls.append("exhaustive_matcher")
+
+        def mapper(
+            self,
+            image_path: Path,
+            database_path: Path,
+            output_path: Path,
+        ) -> None:
+            calls.append("mapper")
+            sparse_model = output_path / "0"
+            sparse_model.mkdir(parents=True, exist_ok=True)
+            for name in ("cameras.bin", "images.bin", "points3D.bin"):
+                (sparse_model / name).write_bytes(b"bin")
+
+        def image_undistorter(
+            self,
+            image_path: Path,
+            input_path: Path,
+            output_path: Path,
+        ) -> None:
+            calls.append("image_undistorter")
+            dense_sparse = output_path / "sparse"
+            dense_sparse.mkdir(parents=True, exist_ok=True)
+            for name in ("cameras.bin", "images.bin", "points3D.bin"):
+                (dense_sparse / name).write_bytes(b"bin")
+            dense_images = output_path / "images"
+            dense_images.mkdir(parents=True, exist_ok=True)
+            (dense_images / "img.jpg").write_bytes(b"img")
+
+    monkeypatch.setattr(
+        pipeline_module,
+        "ColmapRunner",
+        FakeColmapRunnerProbe,
+    )
+
+    project = DummyProject(tmp_path / "project")
+    project.folder.mkdir(parents=True, exist_ok=True)
+
+    pipeline = Pipeline(
+        project=project,
+        configuration=DummyConfiguration(tmp_path),
+    )
+
+    pipeline._run_colmap(image_folder=tmp_path / "images")
+
+    assert created_before_first_call == [True]
+
+
+def test_colmap_cleanup_does_not_touch_unrelated_folders(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Cleanup must never delete project images, frames, video, or
+    openmvs folders."""
+
+    calls: list[str] = []
+
+    monkeypatch.setattr(
+        pipeline_module,
+        "ColmapRunner",
+        _make_fake_colmap_runner(calls),
+    )
+
+    project = DummyProject(tmp_path / "project")
+    project.folder.mkdir(parents=True, exist_ok=True)
+
+    # Create unrelated project data that must survive.
+    sentinel_files = {
+        "images": project.folder / "images" / "photo.jpg",
+        "frames": project.folder / "frames" / "frame_000000.jpg",
+        "video": project.folder / "video.mp4",
+        "openmvs": project.folder / "openmvs" / "scene.mvs",
+    }
+    for path in sentinel_files.values():
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(b"sentinel")
+
+    pipeline = Pipeline(
+        project=project,
+        configuration=DummyConfiguration(tmp_path),
+    )
+
+    pipeline._run_colmap(image_folder=tmp_path / "images")
+
+    for name, path in sentinel_files.items():
+        assert path.exists(), f"Sentinel file was deleted: {name}"

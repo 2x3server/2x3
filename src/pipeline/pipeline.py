@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import shutil
 from pathlib import Path
 
 from ..core.configuration_manager import ConfigurationManager
@@ -32,6 +33,9 @@ class Pipeline:
 
         workspace = self.project.folder / "colmap"
         artifacts = ReconstructionArtifactCheck()
+
+        if workspace.exists():
+            shutil.rmtree(workspace)
 
         workspace.mkdir(parents=True, exist_ok=True)
 
