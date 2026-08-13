@@ -11,6 +11,7 @@ from ..models.project import Project
 from .colmap_runner import ColmapRunner
 from .image_quality import ImageQualityChecker
 from .import_images import ImageImporter
+from .checks.reconstruction import ReconstructionArtifactCheck
 from .openmvs_runner import OpenMVSRunner
 from .video_import import VideoImporter
 
@@ -93,6 +94,8 @@ class Pipeline:
             self.configuration.openmvs_executable_folder,
         )
 
+        artifact_check = ReconstructionArtifactCheck()
+
         scene = workspace / "scene.mvs"
 
         runner.interface_colmap(
@@ -100,13 +103,46 @@ class Pipeline:
             output_file=scene,
         )
 
+        artifact_check.check(
+            stage="InterfaceCOLMAP",
+            artifacts=[scene],
+        )
+
         runner.densify_point_cloud(scene)
 
         scene = workspace / "scene_dense.mvs"
 
+        artifact_check.check(
+            stage="DensifyPointCloud",
+            artifacts=[
+                scene,
+                workspace / "scene_dense.ply",
+            ],
+        )
+
         runner.reconstruct_mesh(scene)
+
+        artifact_check.check(
+            stage="ReconstructMesh",
+            artifacts=[workspace / "scene_dense_mesh.ply"],
+        )
+
         runner.refine_mesh(scene)
+
+        artifact_check.check(
+            stage="RefineMesh",
+            artifacts=[
+                workspace / "scene_dense_mesh_refine.mvs",
+                workspace / "scene_dense_mesh_refine.ply",
+            ],
+        )
+
         runner.texture_mesh(scene)
+
+        artifact_check.check(
+            stage="TextureMesh",
+            artifacts=[workspace / "scene_dense_mesh_refine_texture.ply"],
+        )
 
         from .stl_exporter import STLExporter
 
