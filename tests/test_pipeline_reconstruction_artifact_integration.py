@@ -138,6 +138,10 @@ def test_pipeline_continues_when_all_openmvs_artifacts_exist(
                 "mesh",
                 encoding="utf-8",
             )
+            (workspace / "scene_dense_mesh.mvs").write_text(
+                "mesh-mvs",
+                encoding="utf-8",
+            )
 
         def refine_mesh(self, scene_file: Path) -> None:
             workspace = scene_file.parent

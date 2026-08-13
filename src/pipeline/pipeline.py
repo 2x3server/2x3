@@ -148,7 +148,10 @@ class Pipeline:
         runner.reconstruct_mesh(scene)
         artifacts.require_files(
             stage="OpenMVS ReconstructMesh",
-            files=[workspace / "scene_dense_mesh.ply"],
+            files=[
+                workspace / "scene_dense_mesh.mvs",
+                workspace / "scene_dense_mesh.ply",
+            ],
         )
 
         scene = workspace / "scene_dense_mesh.mvs"
