@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import shutil
 from pathlib import Path
 
 from ..core.configuration_manager import ConfigurationManager
@@ -36,6 +37,15 @@ class Pipeline:
         database = workspace / "database.db"
         sparse = workspace / "sparse"
         dense = workspace / "dense"
+
+        if database.exists():
+            database.unlink()
+
+        if sparse.exists():
+            shutil.rmtree(sparse)
+
+        if dense.exists():
+            shutil.rmtree(dense)
 
         sparse.mkdir(parents=True, exist_ok=True)
         dense.mkdir(parents=True, exist_ok=True)
