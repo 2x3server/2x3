@@ -1,0 +1,24 @@
+RICOSTRUZIONE 3D PROFILO-CONSTRAINED
+======================================================================
+Vertici: 32768
+Facce: 65280
+Dimensioni X: 493.500000
+Dimensioni Y: 1.000000
+Dimensioni Z: 358.372774
+Top pixel: 56
+Bottom pixel: 950
+Asse X: 389.75
+Asse Y: 504.06
+
+LARGHEZZE MASSIME
+frame_01: 493.50px
+frame_02: 511.50px
+frame_03: 320.50px
+frame_04: 459.50px
+frame_05: 493.50px
+frame_06: 429.50px
+frame_07: 320.50px
+frame_08: 447.50px
+
+NOTA:
+Questa mesh e' una ricostruzione profilo-constrained e NON e' ancora considerata MASTER.

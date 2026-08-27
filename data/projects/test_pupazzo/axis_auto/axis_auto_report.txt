@@ -1,0 +1,21 @@
+======================================================================
+STIMA AUTOMATICA DELL'ASSE DI ROTAZIONE
+======================================================================
+
+Immagini: data/projects/test_pupazzo/images/centrate_pulite
+Numero viste: 8
+Risoluzione: 768 x 1024
+
+ASSE STIMATO
+X = 240.250000 px
+Y = 411.062500 px
+
+QUALITA'
+Errore = 0.11975408
+Affidabilità = BASSA
+Tempo calcolo = 985.769 s
+
+IMPORTANTE
+L'asse non è stato definito come media dei centri delle silhouette.
+Il punto iniziale medio è stato utilizzato solamente come inizializzazione numerica della ricerca.
+Il risultato finale deriva dalla ricerca dell'asse che minimizza l'errore complessivo tra le viste.

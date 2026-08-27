@@ -1,0 +1,5 @@
+error=0.03785975
+axis_x=300.000000
+start_angle=-10.000000
+scale_x=1.200000
+scale_z=1.300000

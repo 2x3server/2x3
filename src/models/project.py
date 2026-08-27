@@ -24,6 +24,7 @@ class Project:
         self.output_folder = self.folder / "output"
 
         self.cache_folder = self.folder / "cache"
+        self.prepared_inputs_folder = self.cache_folder / "prepared_inputs"
         self.masks_folder = self.folder / "masks"
         self.sparse_folder = self.folder / "sparse"
         self.dense_folder = self.folder / "dense"

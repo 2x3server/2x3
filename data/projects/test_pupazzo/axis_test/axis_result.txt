@@ -1,0 +1,2 @@
+Asse X migliore: 417.666667
+Errore: 0.05350669

@@ -22,7 +22,7 @@ class ConfigurationManager:
         )
 
         # Video
-        self.frame_step = 30
+        self.frame_step = 1
 
         # Image quality
         self.laplacian_threshold = 5.0
