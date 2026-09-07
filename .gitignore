@@ -35,3 +35,5 @@ data/tmp/
 depth*.dmap
 data/projects/demo/openmvs/
 data/projects/demo/colmap/database.db
+experiments/
+*.ply
